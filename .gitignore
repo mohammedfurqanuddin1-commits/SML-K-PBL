@@ -1,220 +1,147 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[codz]
-*$py.class
+import java.util.Scanner;
 
-# C extensions
-*.so
+public class CompetitiveExamReportCard {
 
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+    // Helper class to store and calculate statistics for each subject
+    static class SubjectStats {
+        String name;
+        int totalQuestions;
+        int maxMarks;
+        int rightAnswers;
+        int wrongAnswers;
+        int notAttempted;
+        double marksPerQuestion;
+        double negativeMarkWeight; // e.g., 0.33 for 1/3rd negative marking
 
-# PyInstaller
-#   Usually these files are written by a python script from a template
-#   before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
+        public SubjectStats(String name, int totalQuestions, int maxMarks, double negativeMarkWeight) {
+            this.name = name;
+            this.totalQuestions = totalQuestions;
+            this.maxMarks = maxMarks;
+            this.marksPerQuestion = (double) maxMarks / totalQuestions;
+            this.negativeMarkWeight = negativeMarkWeight;
+        }
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+        public void setInputs(int right, int wrong, int notAttempted) {
+            this.rightAnswers = right;
+            this.wrongAnswers = wrong;
+            this.notAttempted = notAttempted;
+        }
 
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py.cover
-*.lcov
-.hypothesis/
-.pytest_cache/
-cover/
+        public int getAttempted() {
+            return rightAnswers + wrongAnswers;
+        }
 
-# Translations
-*.mo
-*.pot
+        public double getScoredMarks() {
+            double positiveScore = rightAnswers * marksPerQuestion;
+            double negativeScore = wrongAnswers * (marksPerQuestion * negativeMarkWeight);
+            double finalScore = positiveScore - negativeScore;
+            return Math.max(0.0, finalScore); // Ensure marks don't drop below zero overall
+        }
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
+        public double getPercentage() {
+            if (maxMarks == 0) return 0.0;
+            return (getScoredMarks() / maxMarks) * 100.0;
+        }
+    }
 
-# Flask stuff:
-instance/
-.webassets-cache
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
 
-# Scrapy stuff:
-.scrapy
+        System.out.println("==================================================");
+        System.out.println("   RRB / SSC / STATE EXAM PERFORMANCE EVALUATOR   ");
+        System.out.println("==================================================");
+        
+        // Define standard exam pattern structures (Adjustable)
+        // Format: Subject Name, Total Questions, Total Max Marks, Negative Marking Ratio (e.g., 0.33 for 1/3rd)
+        SubjectStats arithmetic = new SubjectStats("Arithmetic / Quant", 25, 25, 0.33);
+        SubjectStats reasoning = new SubjectStats("General Intelligence & Reasoning", 25, 25, 0.33);
+        SubjectStats english = new SubjectStats("English Language", 25, 25, 0.33);
+        SubjectStats gk = new SubjectStats("General Knowledge & GA", 25, 25, 0.33);
 
-# Sphinx documentation
-docs/_build/
+        SubjectStats[] subjects = {arithmetic, reasoning, english, gk};
 
-# PyBuilder
-.pybuilder/
-target/
+        System.out.println("\nEnter your exam results data section-by-section:\n");
 
-# Jupyter Notebook
-.ipynb_checkpoints
+        // Input loop for each section
+        for (SubjectStats subj : subjects) {
+            System.out.println("--- " + subj.name + " (" + subj.totalQuestions + " Questions, " + subj.maxMarks + " Marks) ---");
+            
+            int right = -1, wrong = -1, notAttempted = -1;
+            
+            while (true) {
+                System.out.print("Enter Right Answers (0 - " + subj.totalQuestions + "): ");
+                right = scanner.nextInt();
+                
+                System.out.print("Enter Wrong Answers: ");
+                wrong = scanner.nextInt();
+                
+                notAttempted = subj.totalQuestions - (right + wrong);
+                
+                if (right >= 0 && wrong >= 0 && notAttempted >= 0 && (right + wrong <= subj.totalQuestions)) {
+                    break;
+                }
+                System.out.println("⚠️ Invalid entry! Sum of right and wrong cannot exceed total questions. Re-enter.\n");
+            }
+            
+            subj.setInputs(right, wrong, notAttempted);
+            System.out.println("-> Not Attempted calculated automatically: " + notAttempted + "\n");
+        }
 
-# IPython
-profile_default/
-ipython_config.py
+        scanner.close();
 
-# pyenv
-#   For a library or package, you might want to ignore these files since the code is
-#   intended to run in multiple environments; otherwise, check them in:
-# .python-version
+        // ==========================================
+        // GENERATE FINAL DETAILED REPORT CARD
+        // ==========================================
+        System.out.println("\n================================================================");
+        System.out.println("                     FINAL EXAM REPORT CARD                     ");
+        System.out.println("================================================================");
+        System.out.printf("%-35s | %-8s | %-8s | %-8s | %-8s\n", "Subject", "Attempt", "Right", "Wrong", "Score");
+        System.out.println("--------------------------------------------------------------------------------");
 
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-# Pipfile.lock
+        int totalQ = 0, totalAtt = 0, totalRight = 0, totalWrong = 0, totalNotAtt = 0;
+        double totalMaxMarks = 0, totalScoredMarks = 0;
 
-# uv
-#   Similar to Pipfile.lock, it is generally recommended to include uv.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-# uv.lock
+        for (SubjectStats subj : subjects) {
+            int attempted = subj.getAttempted();
+            double scored = subj.getScoredMarks();
+            
+            System.out.printf("%-35s | %-8d | %-8d | %-8d | %6.2f/%d\n", 
+                subj.name, attempted, subj.rightAnswers, subj.wrongAnswers, scored, subj.maxMarks);
 
-# poetry
-#   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-#   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
-# poetry.lock
-# poetry.toml
+            // Accumulate totals
+            totalQ += subj.totalQuestions;
+            totalAtt += attempted;
+            totalRight += subj.rightAnswers;
+            totalWrong += subj.wrongAnswers;
+            totalNotAtt += subj.notAttempted;
+            totalMaxMarks += subj.maxMarks;
+            totalScoredMarks += scored;
+        }
 
-# pdm
-#   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
-#   pdm recommends including project-wide configuration in pdm.toml, but excluding .pdm-python.
-#   https://pdm-project.org/en/latest/usage/project/#working-with-version-control
-# pdm.lock
-# pdm.toml
-.pdm-python
-.pdm-build/
+        double overallPercentage = (totalScoredMarks / totalMaxMarks) * 100.0;
 
-# pixi
-#   Similar to Pipfile.lock, it is generally recommended to include pixi.lock in version control.
-# pixi.lock
-#   Pixi creates a virtual environment in the .pixi directory, just like venv module creates one
-#   in the .venv directory. It is recommended not to include this directory in version control.
-.pixi/*
-!.pixi/config.toml
-
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
-__pypackages__/
-
-# Celery stuff
-celerybeat-schedule*
-celerybeat.pid
-
-# Redis
-*.rdb
-*.aof
-*.pid
-
-# RabbitMQ
-mnesia/
-rabbitmq/
-rabbitmq-data/
-
-# ActiveMQ
-activemq-data/
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
-.env
-.envrc
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs/Zensical documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-
-# pytype static type analyzer
-.pytype/
-
-# Cython debug symbols
-cython_debug/
-
-# PyCharm
-#   JetBrains specific template is maintained in a separate JetBrains.gitignore that can
-#   be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
-#   and can be added to the global gitignore or merged into this file.  For a more nuclear
-#   option (not recommended) you can uncomment the following to ignore the entire idea folder.
-# .idea/
-
-# Abstra
-#   Abstra is an AI-powered process automation framework.
-#   Ignore directories containing user credentials, local state, and settings.
-#   Learn more at https://abstra.io/docs
-.abstra/
-
-# Visual Studio Code
-#   Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore that
-#   can be found at https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore
-#   and can be added to the global gitignore or merged into this file. However, if you prefer, you
-#   could uncomment the following to ignore the entire vscode folder
-# .vscode/
-# Temporary file for partial code execution
-tempCodeRunnerFile.py
-
-# Ruff stuff:
-.ruff_cache/
-
-# PyPI configuration file
-.pypirc
-
-# Marimo
-marimo/_static/
-marimo/_lsp/
-__marimo__/
-
-# Streamlit
-.streamlit/secrets.toml
+        System.out.println("================================================================");
+        System.out.println("                     OVERALL PERFORMANCE SUMMARY                ");
+        System.out.println("================================================================");
+        System.out.printf(" Total Questions in Exam : %d\n", totalQ);
+        System.out.printf(" Total Questions Attempted: %d\n", totalAtt);
+        System.out.printf(" Total Questions Skipped : %d\n", totalNotAtt);
+        System.out.printf(" Total Correct Answers   : %d\n", totalRight);
+        System.out.printf(" Total Incorrect Answers : %d\n", totalWrong);
+        System.out.println("----------------------------------------------------------------");
+        System.out.printf("🎯 **Final Marks Scored**  : %.2f / %.0f\n", totalScoredMarks, totalMaxMarks);
+        System.out.printf("📈 **Overall Percentage**  : %.2f%%\n", overallPercentage);
+        
+        // Performance grading benchmark
+        if (overallPercentage >= 80.0) {
+            System.out.println("🏆 **Grade / Standing**: Outstanding! Safe for top-tier competitive cutoffs.");
+        } else if (overallPercentage >= 65.0) {
+            System.out.println("⭐ **Grade / Standing**: Good Performance. Highly competitive score.");
+        } else if (overallPercentage >= 50.0) {
+            System.out.println("⚠️ **Grade / Standing**: Average Standing. Focus on reducing negative marking.");
+        } else {
+            System.out.println("❌ **Grade / Standing**: Needs Improvement. Comprehensive revision required.");
+        }
+        System.out.println("================================================================");
+    }
+}
